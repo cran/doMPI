@@ -1,0 +1,7 @@
+export(registerDoMPI, startNWScluster, startMPIcluster, clusterSize, closeCluster,
+    dompiWorkerLoop, openMPIcluster, sinkWorkerOutput)
+S3method(clusterSize, nwscluster)
+S3method(closeCluster, nwscluster)
+S3method(clusterSize, mpicluster)
+S3method(closeCluster, mpicluster)
+import(foreach)

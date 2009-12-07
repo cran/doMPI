@@ -1,0 +1,29 @@
+NEWS/ChangeLog for doMPI
+------------------------
+
+0.1-3	2009-12-XX
+    o	modified exception handling in the worker loop to be more efficient
+    o	renamed workerLoop to dompiWorkerLoop to avoid conflict with nws
+    o	added mtag and wtag arguments to startMPIcluster and openMPIcluster
+    o	added a README file to acknowledge people and packages
+
+0.1-2	2009-12-04
+    o	rewrote MPI broadcast support to be more efficient
+    o	added backend-specific "forcePiggyback" and "bcastThreshold" options
+    o	added support for executing doMPI scripts in non-spawn mode
+    o	added support for multiple cluster objects by adding "comm" and
+	"intercomm" arguments to startMPIcluster
+    o	modified benchmarks to take command line arguments using getopt
+    o	modified benchmarks and examples to run in non-spawn mode
+
+0.1-1	2009-11-20
+    o	added sanity checks on the way the program is executed
+    o	added backend-specific "profile" option
+    o	added "bcast" argument to startMPIcluster
+    o	added "logdir" argument to startMPIcluster and startNWScluster
+    o	use of mclapply controlled via "maxcores" argument
+    o	multicore and nws are now suggested rather than required
+    o	new examples and a demo
+
+0.1	2009-10-31
+    o	project created on r-forge

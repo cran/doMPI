@@ -1,0 +1,576 @@
+% \VignetteIndexEntry{Introduction to doMPI}
+% \VignetteDepends{doMPI}
+% \VignettePackage{doMPI}
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage[pdftex]{graphicx}
+\usepackage{color}
+\usepackage{xspace}
+\usepackage{fancyvrb}
+\usepackage{fancyhdr}
+\usepackage[
+         colorlinks=true,
+         linkcolor=blue,
+         citecolor=blue,
+         urlcolor=blue]
+         {hyperref}
+         \usepackage{lscape}
+\usepackage{Sweave}           
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% define new colors for use
+\definecolor{darkgreen}{rgb}{0,0.6,0}
+\definecolor{darkred}{rgb}{0.6,0.0,0}
+\definecolor{lightbrown}{rgb}{1,0.9,0.8}
+\definecolor{brown}{rgb}{0.6,0.3,0.3}
+\definecolor{darkblue}{rgb}{0,0,0.8}
+\definecolor{darkmagenta}{rgb}{0.5,0,0.5}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\bld}[1]{\mbox{\boldmath $#1$}}
+\newcommand{\shell}[1]{\mbox{$#1$}}
+\renewcommand{\vec}[1]{\mbox{\bf {#1}}}
+
+\newcommand{\ReallySmallSpacing}{\renewcommand{\baselinestretch}{.6}\Large\normalsize}
+\newcommand{\SmallSpacing}{\renewcommand{\baselinestretch}{1.1}\Large\normalsize}
+
+\newcommand{\halfs}{\frac{1}{2}}
+
+\setlength{\oddsidemargin}{-.25 truein}
+\setlength{\evensidemargin}{0truein}
+\setlength{\topmargin}{-0.2truein}
+\setlength{\textwidth}{7 truein}
+\setlength{\textheight}{8.5 truein}
+\setlength{\parindent}{0.20truein}
+\setlength{\parskip}{0.10truein}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+\lhead{}
+\chead{Introduction to {\em doMPI}}
+\rhead{}	
+\lfoot{}
+\cfoot{}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Introduction to {\tt doMPI}}
+\author{Steve Weston \\ stephen.b.weston@gmail.com}
+
+
+\begin{document}
+
+\maketitle
+
+\thispagestyle{empty}
+	
+\section{Introduction}
+
+<<loadLibs,results=hide,echo=FALSE>>=
+library(foreach)
+# examples in this document will be executed sequentially
+registerDoSEQ()
+@
+
+The \texttt{doMPI} package is what I call a ``parallel backend'' for the
+\texttt{foreach} package.  Since the \texttt{foreach} package is not a
+parallel programming system, but a parallel programming framework, it
+needs a parallel programming system to do the actual work in parallel.
+The \texttt{doMPI} package acts as an adaptor to the \texttt{Rmpi}
+package, which in turn is an \texttt{R} interface to an implementation
+of \texttt{MPI}.  \texttt{MPI}, or \emph{Message Passing Interface}, is
+a specification for an \texttt{API} for passing messages between
+different computers.  There are a number of \texttt{MPI} implementations
+available that allow data to be moved between computers quite
+efficiently.
+
+Programming with \texttt{MPI} is rather difficult, however, since it is
+a rather large and complex \texttt{API}.  For example, the \texttt{Rmpi}
+package defines about 110 \texttt{R} functions, only a few of which are
+only for internal use.  And the \texttt{MPI} standard includes many more
+functions that aren't supported by \texttt{Rmpi}, such as the file
+functions.  Of course, you only need to learn a small percentage
+of those functions in order to start using \texttt{MPI} effectively, but
+it can take awhile just to figure out which functions are really
+important, and which ones you can safely ignore.
+
+The \texttt{foreach} package is an attempt to make parallel computing
+much simpler by providing a parallel for-loop construct for \texttt{R}.
+As an adaptor to \texttt{MPI}, the \texttt{doMPI} package is an attempt
+to give you the best of both worlds: the ease of use of parallel
+for-loops, with the efficiency of \texttt{MPI}.
+
+Unfortunately, there are still a wide variety of problems that you may
+run into.  First, you need to have \texttt{MPI} installed on your
+computers, and then you have to build and install \texttt{Rmpi} to use
+that \texttt{MPI} installation.  That is where many people run into
+problems, particularly on Windows.  However, on Debian / Ubuntu, it is
+very easy to install \texttt{Open MPI}, and \texttt{Rmpi} works quite
+well with it.  Mac~OS~X~10.5 and later includes \texttt{Open MPI} with
+the developer tools, and \texttt{Rmpi} works well there, also.
+
+Another thing to be aware of is that you have to run your \texttt{R}
+programs differently in order to execute on multiple computers, and the
+exact method varies depending on your \texttt{MPI} implementation.  If
+you just start a normal \texttt{R} session, your workers will only run
+on your local machine.  That's great for testing, but the point of using
+\texttt{doMPI} is to execute on multiple computers.  To do that, you'll
+need to start your \texttt{R} session using a command such as
+\texttt{orterun}, \texttt{mpirun}, or \texttt{mpiexec}, depending on
+your \texttt{MPI} installation.
+
+Hopefully, this document will help you to get started, but it primarily
+deals with programming issues, not configuring or administering
+computers.  And for running \texttt{doMPI} scripts, I only discuss the
+use of \texttt{Open MPI}.  Very likely you will have some problem that I
+couldn't help you with anyway, and so I highly recommend that you join
+the R-sig-hpc mailing list.  It is a very friendly and helpful
+community, and there isn't even a lot of traffic on it.
+
+\section{Installing the software}
+
+Assuming that you already have \texttt{R} and \texttt{MPI} installed on
+your computers, you will need to install \texttt{doMPI} and the packages
+that it depends on.  That can be done with a single ``install.packages''
+command, but you might want to explicitly install \texttt{Rmpi} first,
+so you can clearly see if it installs correctly or not.  On Debian /
+Ubuntu, you can actually install \texttt{Rmpi} by using \texttt{apt-get}
+to install the Debian \texttt{r-cran-rmpi} package.  That's the most
+fool-proof way to install \texttt{Rmpi} on Ubuntu, for example, since
+\texttt{apt-get} will automatically install a compatible version of
+\texttt{MPI}, if necessary.  But on other systems, including Mac~OS~X,
+you can install it with:
+
+<<eval=FALSE>>=
+install.packages("Rmpi")
+@
+
+As I mentioned, if you have problems, I strongly recommend the R-sig-hpc
+mailing list if you don't have a local expert.  I'm certainly not an expert on
+installing \texttt{Rmpi}, since I've only installed it on Ubuntu and
+Mac~OS~X, where, as I said, it's easy to install.\footnote{Am I being
+too subtle here?}
+
+Once \texttt{Rmpi} is installed, the rest should be easy:
+
+<<eval=FALSE>>=
+install.packages("doMPI", dependencies=TRUE)
+@
+
+That will also install packages such as \texttt{foreach} and
+\texttt{iterators}.  You may also want to install the \texttt{multicore}
+package, which can be used by \texttt{doMPI}, but it is not required.
+Oddly enough, it's also possible to use \texttt{doMPI} with the
+\texttt{nws} package, but again, it's not required.
+
+\section{Getting Started}
+
+So if I haven't scared you off with my introduction, and you got all of
+the software installed, then it's time to see if it actually works!  For
+testing purposes, we'll just run on a single computer.  In that case,
+you just start a normal \texttt{R} session.  I'll talk about running on
+multiple computers later, in section 8.
+
+Once you've started an \texttt{R} session, load the \texttt{doMPI}
+package:
+
+<<eval=FALSE>>=
+library(doMPI)
+@
+
+You'll no doubt get an error at this point if \texttt{Rmpi} isn't
+properly installed.  If that happens, you should restart the \texttt{R}
+session, load \texttt{Rmpi}, make a copy of the error message, google
+around for the error, scratch your head for awhile, and then post a
+polite, well-thought-out request for help to R-sig-hpc that includes the
+entire error message.  Very possibly, someone on the list has
+encountered that error before, and will offer advice on how to fix it.
+But don't be too surprised if someone suggests that you switch to Ubuntu.
+
+Once you can successfully load \texttt{doMPI}, the next step is to
+create an \texttt{MPI} cluster object.  There are lots of options, but
+here's one way to do that\footnote{I'm using the \texttt{count} argument
+because we're in an interactive R session.  However, in section 8, I'll
+explain why I don't recommend using the \texttt{count} argument for most
+other circumstances.}:
+
+<<eval=FALSE>>=
+cl <- startMPIcluster(count=2)
+@
+
+This starts two cluster workers, or slaves, as \texttt{MPI} calls them.
+Note that if you're using \texttt{Open MPI}, those two processes will
+immediately start using as much of your CPU as they can.  This is a
+known issue with \texttt{Open MPI}.  They are waiting for the master
+process to send them a message, but they are ``busy waiting'' for that
+message.  That doesn't make much sense in this context, but it can give
+better performance in some contexts.  At any rate, it is an issue that
+the \texttt{Open MPI} group is planning to address in a future release.
+
+The next step is to register the \texttt{MPI} cluster object with the
+\texttt{foreach} package.  This is done with the ``registerDoMPI''
+function:
+
+<<eval=FALSE>>=
+registerDoMPI(cl)
+@
+
+This tells \texttt{foreach} that you want to use \texttt{doMPI} as the
+parallel backend, and that you want to use the specified \texttt{MPI}
+cluster object to execute the tasks.  If you don't register a cluster
+object, your tasks won't be executed in parallel, even though you use
+\texttt{foreach} with the \texttt{\%dopar\%} operator.
+
+When you are finished using the \texttt{MPI} cluster object, it is
+important to shut it down, otherwise you may leak processes on your
+cluster.\footnote{Shutting down the workers is particularly important
+with \texttt{Open MPI}, since they use CPU time even when they are
+``idle''.} You do that with the \texttt{closeCluster} function:
+
+<<eval=FALSE>>=
+closeCluster(cl)
+@
+
+And finally, you should probably call \texttt{mpi.quit} to exit your
+\texttt{R} session when using \texttt{doMPI}.  You could call
+\texttt{mpi.finalize} instead if you want to use \texttt{doMPI}
+interactively during testing.  Both of these functions will ``finalize''
+\texttt{MPI}, which is a requirement for \texttt{MPI} programs.  I'm not
+sure what the consequences are of not finalizing \texttt{MPI}, but I
+have seen error messages from \texttt{orterun} when I forgot to
+finalize.
+
+\section{A simple example}
+
+Now we're ready to run a little test that actually runs in parallel.  I
+always do that with a very simple program that executes the
+\texttt{sqrt} function in parallel.  It's not a practical use of
+\texttt{foreach}, because the \texttt{sqrt} function runs so fast that
+it makes no sense to execute it in parallel.  But it makes a great test.
+
+<<>>=
+foreach(i=1:3) %dopar% sqrt(i)
+@
+
+There are a lot of things to comment on in this little example.  First
+of all, notice that a list containing three numbers is returned by this
+command.  That is quite different from a for-loop.  If we did this in a
+for-loop, we would execute \texttt{sqrt} three times, but the result
+would be thrown away.  A for-loop normally uses assignments to save its
+results, but \texttt{foreach} works more like \texttt{lapply} in this
+respect, and that is what makes it work well for parallel execution.
+
+Secondly, notice that we're using a strange binary operator, named
+\texttt{\%dopar\%}.  \texttt{R} doesn't really make it easy to define
+new control structures, but since arguments to functions are lazily
+evaluated, it is possible.  You don't have to worry about that, however.
+Just keep in mind that you need to put \texttt{\%dopar\%} in between the
+\texttt{foreach} and the loop body.
+
+In a real program, you'll obviously want to save the results of the
+computations.  You may also have several operations to perform, so the
+way you'll usually write the previous example is as:
+
+<<>>=
+x <- foreach(i=1:3) %dopar% {
+    sqrt(i)
+}
+x
+@
+
+The braces are a good practice since they force the correct operator
+precedence.  And if you squint hard, it looks just like a for-loop.
+
+\section{The .combine option}
+
+But what if we want our results to be returned in a vector, rather than
+a list?  We could convert it to a list afterwards, but there's another
+way.  The \texttt{foreach} function takes a number of additional
+arguments, all of which start with a ``.'' to distinguish them from the
+``variable'' arguments.  The one we need in this case is named
+\texttt{.combine}.  You can use it to specify a function that will be
+used to combine the results.  This function must take at least two input
+arguments, and return a value which is a ``combined'' or possibly
+``reduced'' version of its input arguments.  To combine many numeric
+values into a single vector of numeric values, we can use the standard
+\texttt{c} function, which concatenates its arguments:
+
+<<>>=
+x <- foreach(i=1:3, .combine="c") %dopar% {
+    sqrt(i)
+}
+x
+@
+
+This works well for numeric, character, and logical values.
+
+I also use the \texttt{cbind} function as a \texttt{.combine} function
+quite often.  I use it to turn vectors into matrices:
+
+<<>>=
+x <- foreach(seed=c(7, 11, 13), .combine="cbind") %dopar% {
+    set.seed(seed)
+    rnorm(3)
+}
+x
+@
+
+\section{Computing the sinc function}
+
+Now let's try a slightly more realistic example.  Let's evaluate the
+\texttt{sinc} function over a grid of values.  We'd like to return the
+results in a matrix, as in the previous example, so we'll use
+\texttt{cbind} to combine the results:
+
+<<fig=TRUE>>=
+x <- seq(-8, 8, by=0.5)
+v <- foreach(y=x, .combine="cbind") %dopar% {
+    r <- sqrt(x^2 + y^2) + .Machine$double.eps
+    sin(r) / r
+}
+persp(x, x, v)
+@
+
+One thing to note in this example is that I'm doing an assignment to the
+variable \texttt{r} in the loop.  You can do that with \texttt{foreach},
+but if you want your code to work correctly in parallel, you need to be
+careful not to use variable assignments as a way of communicating
+between different iterations of the loop.  That's what parallel
+programmers call a ``loop dependence''.  In this case I'm only using it
+to communicate within a single iteration, so it's safe.
+
+Also note that I'm using the variable \texttt{x} inside the loop, which
+was defined before the loop.  In many other parallel computing systems,
+you'd have to explicitly export that variable somehow or other.  With
+\texttt{foreach}, it's done automatically.
+
+As a comparison, let's write this program using the standard
+\texttt{lapply} function:
+
+<<results=hide>>=
+x <- seq(-8, 8, by=0.5)
+sinc <- function(y) {
+    r <- sqrt(x^2 + y^2) + .Machine$double.eps
+    sin(r) / r
+}
+r <- lapply(x, sinc)
+v <- do.call("cbind", r)
+persp(x, x, v)
+@
+
+As you can see, there is a similarity between these two versions.  But
+it makes me very happy that the parallel version is actually shorter and
+easier to explain than the sequential version.
+
+I should also point out that in this \texttt{sinc} example, I've been
+very careful to make use of vector operations in the loop.  The primary
+rule for getting good performance in \texttt{R} is to use vector
+operations whenever possible.  I flagrantly broke that rule in the
+\texttt{sqrt} example.  In the \texttt{sinc} example, I used vector
+operations to compute the columns, and I used \texttt{foreach} to
+execute those vector operations in parallel.  The \texttt{sinc} example
+is still not really compute intensive enough to really merit executing
+it in parallel, but at least it uses much better \texttt{R} programming
+style.
+
+\section{Processing a directory of data files}
+
+Now let's try a different kind of example that you probably haven't seen
+in any parallel programming book, but simply reeks of practicality.
+Let's say that you have a directory full of CSV data files, and you want
+to read each of them, analyze the data in some way, and produce a plot
+of the results that you write to output files.  Obviously, it's
+embarrassingly parallel, it can be time consuming, and it's a common
+task to perform.
+
+Let's perform that kind of operation using Andy Liaw's
+\texttt{randomForest} package:
+
+<<results=hide>>=
+ifiles <- list.files(pattern="\\.csv$")
+ofiles <- sub("\\.csv$", ".png", ifiles)
+foreach(i=ifiles, o=ofiles, .packages="randomForest") %dopar% {
+    d <- read.csv(i)
+    rf <- randomForest(Species~., data=d, proximity=TRUE)
+    png(filename=o)
+    MDSplot(rf, d$Species)
+    dev.off()
+    NULL
+}
+@
+
+Note that we're iterating over two different vectors in this example:
+\texttt{ifiles} and \texttt{ofiles}, which are both the same length.
+The \texttt{foreach} function let's you specify any number of variables
+to iterate over, and it stops when one of them runs out of values.
+
+Also note the \texttt{NULL} at the end of the loop body.  There is no
+value to return in this case, so I used a \texttt{NULL} to make sure
+that I wasn't needlessly sending anything large back to the master,
+which would hurt the performance somewhat.  The real results of
+executing the loop are written to disk by the workers directly.
+
+\section{Running doMPI on a cluster}
+
+Now that we've run some interesting examples on a single computer,
+let's try running on multiple computers, which is the real purpose of
+the \texttt{doMPI} package.
+
+To execute \texttt{doMPI} scripts on multiple computers, you need to
+execute the \texttt{R} interpreter using a command such as
+\texttt{mpirun}, \texttt{mpiexec}, or in the case of \texttt{Open MPI},
+\texttt{orterun}\footnote{There could be another way to run on multiple
+computers, but I haven't figured it out.  But I had a hard time finding
+documentation on this subject, especially in the context of
+\texttt{Rmpi}.}.  Since I've only used \texttt{Open MPI}, I'll only
+discuss the use of \texttt{orterun}, although it should be pretty simple
+to translate my instructions for other implementations.
+
+When you execute \texttt{orterun}, you can specify the hosts to use
+as a comma-separated list using the \texttt{-H} or \texttt{-host}
+option, or by specifying a ``host file'' using the \texttt{-hostfile}
+option.  You can also use the \texttt{-n} or \texttt{-np} option to
+specify how many copies of your script to run on those nodes.  If you specify
+that only one copy should be executed, then \texttt{doMPI} will start
+workers for you using the \texttt{Rmpi} \texttt{mpi.comm.spawn}
+function when you execute \texttt{startMPIcluster}.  If you specify
+that more than one copy of your script should be executed on those
+hosts, then \texttt{doMPI} will
+not spawn workers, assuming that you have started all of the workers that
+you wanted using \texttt{orterun}\footnote{Actually,
+\texttt{startMPIcluster} will always spawn workers unless the \texttt{comm}
+argument is \texttt{0}, but \texttt{comm} defaults to \texttt{0} if
+\texttt{mpi.comm.size(0)} is greater than one.  See the documentation on
+\texttt{startMPIcluster} for more information.}.
+That means that multiple instances
+of your script are going to start running, or in other words, the
+workers are going to execute your script.  In that case, your script
+should call the \texttt{startMPIcluster} function near the beginning.
+The \texttt{startMPIcluster} function will notice when a ``worker''
+calls it, and will execute the \texttt{workerLoop} function, in order to
+execute tasks submitted by the master, or ``rank 0'' process.
+
+Now let's try some examples.  Here's an example that will run the 
+script ``sincMPI.R'' using two workers:
+
+\begin{verbatim}
+% orterun -H localhost,n2,n3 R --slave -f sincMPI.R
+\end{verbatim}
+
+The \texttt{orterun} command will run the \texttt{R} interpreter on
+``localhost'', ``n2'', and ``n3'', and \texttt{R} will execute the
+script named ``sincMPI.R'' in the current directory.  \texttt{sincMPI.R}
+is an example that comes in the \texttt{doMPI} package, so you can try
+this command out by going to the ``examples'' directory of the
+\texttt{doMPI} installation.
+
+The \texttt{sincMPI.R} script first loads \texttt{doMPI}, and then calls
+\texttt{startMPIcluster}.  The copy of \texttt{sincMPI.R} running on the
+master, or ``rank 0'' process, will return from \texttt{startMPIcluster},
+but the other two processes (which are running on hosts ``n2'' and
+``n3'') will not return, since they will execute the \texttt{workerLoop}
+function.  That is why it's a good idea to execute
+\texttt{startMPIcluster} near the beginning of the script, otherwise the
+workers may run into problems executing code that was intended to be
+executed by the master.
+
+The last example used what I call ``non-spawn'' or ``static'' mode.  Now
+let's run in ``spawn'' or ``dynamic'' mode.  We'll start the master on
+node ``n1'', but we'll also list hosts ``n2'' and ``n3''.  That will
+include those nodes in the \texttt{MPI} ``universe'', so that
+\texttt{startMPIcluster} will be able to spawn processes to them:
+
+\begin{verbatim}
+% orterun -H n1,n2,n3 -n 1 R --slave -f sincMPI.R
+\end{verbatim}
+
+Because we specified \texttt{-n 1}, the \texttt{orterun} command only
+starts one copy of the \texttt{R} interpreter running.
+\texttt{startMPIcluster} will then spawn two workers, since it notices
+that \texttt{mpi.universe.size()} is three.  They will execute on hosts
+``n2'' and ``n3'', since \texttt{MPI} knows that they are part of the
+``universe''.
+
+So which of these two methods should you use?  The \texttt{Open MPI}
+documentation advices using ``non-spawn'' mode, since that will give
+better performance.  You probably also need to use ``non-spawn'' mode to
+run with a batch queueing system, such as ``slurm''.  But if your script
+needs to perform other operations before \texttt{startMPIcluster} that
+would fail on the worker processes, or if you need to create multiple
+clusters, then you should use the ``spawn'' mode, by specifying
+\texttt{-n 1}.
+
+Here's a final example that starts multiple processes on the hosts using
+``non-spawn'' mode:
+
+\begin{verbatim}
+% orterun -H localhost,n2,n3 -n 6 R --slave -f sincMPI.R
+\end{verbatim}
+
+This will start two processes on each of the hosts for a total of six
+processes.  The master and one worker will run on ``localhost'', and
+``n2'' and ``n3'' will both run two workers.  In order to spawn five
+workers, you would use \texttt{-n 1}, but you'd also have to modify the
+script to call \texttt{startMPIcluster} with \texttt{count} set to
+\texttt{5}.
+
+In general, I'd suggest not using the \texttt{startMPIcluster}
+\texttt{count} argument unless you're doing something fancy, like
+creating multiple clusters.  I think that's the best method, since it
+let's you control the number of workers strictly from the
+\texttt{orterun} command, which is what we've been doing in all of these
+examples.  But if you do specify a value for \texttt{count} while in
+``non-spawn'' mode, it's got to be equal to \texttt{mpi.comm.size(0) -
+1}, or \texttt{startMPIcluster} will issue an error.  That's one reason
+that none of the examples or benchmarks that come with \texttt{doMPI}
+use the \texttt{count} argument.
+
+\section{Host setup}
+
+Of course, in order for any of these examples to work, you've got to set
+up a lot of things correctly on all of the hosts specified via
+\texttt{-H}.  Generally speaking, I would strongly suggest that you
+setup your hosts so they have an environment that is almost identical to
+your local machine.  That is, they should all have the same user
+account, with the same home directory, with passwordless ssh enabled,
+and all of the same software installed using the same file paths.  For
+example, \texttt{R} should be installed in the same place on all
+machines, and the \texttt{doMPI} package should be installed in the same
+directory on all machines, as well.  That's a pretty big requirement,
+but that's the way most people do things with \texttt{MPI}, and so
+that's the way that many computer clusters are configured.
+
+There are various tricks that you can use to make differently configured
+machines work together.  One trick is to create symbolic links on the
+worker machines to make them look more like the master machine.  And if
+your user account has different names on different machines, you can
+edit the ssh configuration file on the master machine to use the
+appropriate user name for each worker machine.  But if you're going to
+do much parallel execution, it's worth the time and effort to set up
+your computers so that you don't have to depend on tricks.
+
+\section{Conclusion}
+
+I'd like to end by saying how easy parallel computing on a computer
+cluster can be if you use \texttt{foreach} and \texttt{doMPI}.  And it
+is a lot simpler than many of the alternatives.  But running on networks
+of computers always seems to present challenges.  Hopefully, by using
+\texttt{foreach} and \texttt{doMPI}, most of those will be system
+administration challenges, and not programming challenges.  Since
+\texttt{foreach} allows you to separate your parallel program from your
+parallel environment, you can develop your program on a single computer,
+without using any parallel backend at all, let alone a tricky one.  Once
+your program is debugged and working, you can run it on a multicore
+workstation using a ``low maintenance'' parallel backend such as
+\texttt{doMC}\footnote{The \texttt{doMC} package is also available on
+CRAN.}.  And once you've got a computer cluster set up that has all the
+software installed by some friendly sysadmin, with an NFS-mounted home
+directory, you can use the \texttt{doMPI} package to run that same
+parallel program very efficiently using \texttt{MPI} without having to
+learn anything about message passing.
+
+\end{document}

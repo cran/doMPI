@@ -390,7 +390,7 @@ task to perform.
 Let's perform that kind of operation using Andy Liaw's
 \texttt{randomForest} package:
 
-<<results=hide>>=
+<<eval=FALSE>>=
 ifiles <- list.files(pattern="\\.csv$")
 ofiles <- sub("\\.csv$", ".png", ifiles)
 foreach(i=ifiles, o=ofiles, .packages="randomForest") %dopar% {

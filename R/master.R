@@ -46,8 +46,9 @@
 #
 
 master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
-                   initEnvir, initArgs, finalEnvir, finalArgs, profile,
-                   bcastThreshold, forcePiggyback) {
+                   initEnvir, initArgs, initEnvirMaster, initArgsMaster,
+                   finalEnvir, finalArgs, profile, bcastThreshold,
+                   forcePiggyback) {
   # start profiling the foreach execution
   # XXX should require profiling to be enabled
   prof <- startnode('master')
@@ -85,7 +86,7 @@ master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
 
   submitTaskChunk <- function(workerid, tid, job, joblen) {
     sprof <- startnode(paste('submitTaskChunk', workerid), prof)
-    argslist <- as.list(truncate(it, chunkSize))
+    argslist <- to.list(it, chunkSize)
     numtasks <- length(argslist)
     if (numtasks > 0) {
       sendToWorker(cl, workerid, 
@@ -176,6 +177,21 @@ master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
     rm(xenvir)
   }
 
+  # if specified, execute initEnvirMaster
+  # which allows the master and workers to communicate
+  # XXX should I check that initEnvir is non-null?
+  if (!is.null(initEnvirMaster)) {
+    if (verbose)
+      cat('executing initEnvirMaster\n')
+
+    # include extra arguments if function takes arguments
+    if (length(formals(initEnvirMaster)) > 0) {
+      do.call(initEnvirMaster, c(list(envir), initArgsMaster))
+    } else {
+      initEnvirMaster()
+    }
+  }
+
   # wait for results, and submit new tasks to the workers that return them
   while (moretasks) {
     # wait for a result from any worker
@@ -230,21 +246,20 @@ master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
   NULL
 }
 
-# this returns an iterator that returns no more than "n" values
-# from the specified iterator.
-truncate <- function(it, n) {
-  it <- iter(it)
+to.list <- function(x, n) {
+  a <- vector('list', length=n)
+  i <- 0
+  tryCatch({
+    while (i < n) {
+      a[i + 1] <- list(nextElem(x))
+      i <- i + 1
+    }
+  },
+  error=function(e) {
+    if (!identical(conditionMessage(e), 'StopIteration'))
+      stop(e)
+  })
 
-  nextEl <- function() {
-    if (n > 0)
-      n <<- n - 1
-    else
-      stop('StopIteration')
-
-    nextElem(it)
-  }
-
-  obj <- list(nextElem=nextEl)
-  class(obj) <- c('abstractiter', 'iter')
-  obj
+  length(a) <- i
+  a
 }

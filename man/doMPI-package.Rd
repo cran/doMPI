@@ -23,6 +23,8 @@ There are several backend-specific options that can be specified when using
 \code{info} \tab Display extra information, particularly about exported variables\cr
 \code{initEnvir} \tab A function to be called on each worker before executing any tasks\cr
 \code{initArgs} \tab List of extra arguments to pass to the \code{initEnvir} function\cr
+\code{initEnvirMaster} \tab A function called on the master at the same time as \code{initEnvir}\cr
+\code{initArgsMaster} \tab List of extra arguments to pass to the \code{initEnvirMaster} function\cr
 \code{finalEnvir} \tab A function to be called on each worker after executing all tasks\cr
 \code{finalArgs} \tab List of extra arguments to pass to the \code{finalEnvir} function\cr
 \code{profile} \tab Display profiling information from the master's point of view\cr
@@ -47,6 +49,14 @@ the first argument to this function.  That allows you to define new
 variables in the environment, for example.  If \code{initArgs} is
 defined, the contents of the list will be passed as arguments to the
 \code{initEnvir} function after the environment object.
+
+The \code{initEnvirMaster} option is useful if you want to send data
+from the master to the workers explicitly, perhaps using
+\code{mpi.bcast}.  This avoids object serialization, which could improve
+performance for large matrices, for example.  The \code{initArgsMaster}
+option works like \code{initArgs}, however, it is probably less useful,
+since the \code{initEnvirMaster} function runs locally, and can access
+variables via lexical scoping.
 
 The \code{finalEnvir} option is useful for \dQuote{finalizing} the execution
 environment.  It works pretty much the same as the \code{initEnvir}

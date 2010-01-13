@@ -28,6 +28,10 @@ info <- function(data, item) {
          NULL)
 }
 
+getDoMpiCluster <- function() {
+  foreach:::.foreachGlobals$data
+}
+
 makeDotsEnv <- function(...) {
   list(...)
   function() NULL
@@ -41,6 +45,8 @@ doMPI <- function(obj, expr, envir, data) {
   info <- obj$verbose
   initEnvir <- NULL
   initArgs <- NULL
+  initEnvirMaster <- NULL
+  initArgsMaster <- NULL
   finalEnvir <- NULL
   finalArgs <- NULL
   profile <- FALSE
@@ -57,7 +63,9 @@ doMPI <- function(obj, expr, envir, data) {
   if (!is.null(options)) {
     nms <- names(options)
     recog <- nms %in% c('chunkSize', 'info',
-                        'initEnvir', 'initArgs', 'finalEnvir', 'finalArgs',
+                        'initEnvir', 'initArgs',
+                        'initEnvirMaster', 'initArgsMaster',
+                        'finalEnvir', 'finalArgs',
                         'profile', 'bcastThreshold', 'forcePiggyback')
     if (any(!recog))
       warning(sprintf('ignoring unrecognized mpi option(s): %s',
@@ -106,6 +114,30 @@ doMPI <- function(obj, expr, envir, data) {
           print(options$initArgs)
         }
         initArgs <- options$initArgs
+      }
+    }
+
+    if (!is.null(options$initEnvirMaster)) {
+      if (!is.function(options$initEnvirMaster)) {
+        warning('initEnvirMaster must be a function', call.=FALSE)
+      } else {
+        if (obj$verbose) {
+          cat('setting initEnvirMaster option to:\n')
+          print(options$initEnvirMaster)
+        }
+        initEnvirMaster <- options$initEnvirMaster
+      }
+    }
+
+    if (!is.null(options$initArgsMaster)) {
+      if (!is.list(options$initArgsMaster)) {
+        warning('initArgsMaster must be a list', call.=FALSE)
+      } else {
+        if (obj$verbose) {
+          cat('setting initArgsMaster option to:\n')
+          print(options$initArgsMaster)
+        }
+        initArgsMaster <- options$initArgsMaster
       }
     }
 
@@ -219,8 +251,8 @@ doMPI <- function(obj, expr, envir, data) {
 
   # execute the tasks
   master(cl, expr, it, exportenv, obj$packages, obj$verbose, chunkSize, info,
-         initEnvir, initArgs, finalEnvir, finalArgs, profile, bcastThreshold,
-         forcePiggyback)
+         initEnvir, initArgs, initEnvirMaster, initArgsMaster,
+         finalEnvir, finalArgs, profile, bcastThreshold, forcePiggyback)
 
   # check for errors
   errorValue <- getErrorValue(it)

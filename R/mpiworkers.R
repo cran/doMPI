@@ -100,7 +100,13 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
         }
 
         logfile <- file.path(logdir, wfile)
-        outfile <- if (verbose) logfile else "/dev/null"
+        outfile <- if (verbose) {
+          logfile
+        } else if (.Platform$OS.type == "windows") {
+          "nul:"
+        } else {
+          "/dev/null"
+        }
         sinkWorkerOutput(outfile)
 
         # Remove any .Last function, which is probably intended for the master
@@ -114,8 +120,11 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
         } else {
           cl <- openMPIcluster(bcast=bcast, comm=comm, workerid=rank,
                                mtag=mtag, wtag=wtag)
-          cores <- maxcores  # XXX this needs to be fixed
-
+          cores <- if (suppressWarnings(require(multicore, quietly=TRUE))) {
+            maxcores
+          } else {
+            1
+          }
           dompiWorkerLoop(cl, cores=cores, verbose=verbose)
         }
       },

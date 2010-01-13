@@ -1,7 +1,14 @@
 NEWS/ChangeLog for doMPI
 ------------------------
 
-0.1-3	2009-12-XX
+0.1-4	2010-1-14
+    o	add backend-specific "initEnvirMaster" option
+    o	added randomForest example and benchmark
+    o	fixed build problem caused by use of randomForst in vignette
+    o	fixed use of "/dev/null" for better Windows support
+    o	loaded multicore in non-spawn mode as it is in spawn mode
+
+0.1-3	2009-12-07
     o	modified exception handling in the worker loop to be more efficient
     o	renamed workerLoop to dompiWorkerLoop to avoid conflict with nws
     o	added mtag and wtag arguments to startMPIcluster and openMPIcluster

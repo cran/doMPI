@@ -23,7 +23,7 @@ openMPIcluster(bcast=TRUE, comm=0, workerid=mpi.comm.rank(comm), verbose=FALSE,
   \item{comm}{The MPI communicator number.  This should always be
   \code{0} when called from non-spawn mode.
   Defaults to \code{0}.}
-  \item{workerid}{}
+  \item{workerid}{The rank of the worker calling \code{openMPIcluster}.}
   \item{verbose}{Indicates if verbose messages should be enabled.
   Defaults to \code{FALSE}.}
   \item{mtag}{Tag to use for messages sent to the master.

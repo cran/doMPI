@@ -1,6 +1,9 @@
 NEWS/ChangeLog for doMPI
 ------------------------
 
+0.1-5	2010-8-9
+    o	fixed "R CMD check" warning reported by Kurt Hornik
+
 0.1-4	2010-1-14
     o	add backend-specific "initEnvirMaster" option
     o	added randomForest example and benchmark

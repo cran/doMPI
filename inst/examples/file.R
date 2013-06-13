@@ -3,6 +3,9 @@
 # foreach .init and .final arguments are used as well, and how the
 # first argument to the .combine function can be different than the
 # subsequent arguments.  It also sets .inorder to TRUE for efficiency.
+#
+# See initEnvir.R for a similar example, but which has the
+# workers write the data themselves.
 
 suppressMessages(library(doMPI))
 

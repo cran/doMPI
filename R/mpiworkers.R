@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Stephen B. Weston
+# Copyright (c) 2009--2013, Stephen B. Weston
 #
 # This is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -77,7 +77,8 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
     } else {
       # This is a cluster worker, so execute dompiWorkerLoop
       tryCatch({
-        wfile <- sprintf("MPI_%d_%s.log", rank, Sys.info()[['user']])
+        wfile <- sprintf("MPI_%d_%s_%d.log", rank,
+                         Sys.info()[['user']], Sys.getpid())
         tempdir <- Sys.getenv('TMPDIR', '/tmp')
         if (!file.exists(tempdir)) {
           tempdir <- getwd()
@@ -120,9 +121,10 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
         } else {
           cl <- openMPIcluster(bcast=bcast, comm=comm, workerid=rank,
                                mtag=mtag, wtag=wtag)
-          cores <- if (suppressWarnings(require(multicore, quietly=TRUE))) {
+          cores <- if (suppressWarnings(require(parallel, quietly=TRUE))) {
             maxcores
           } else {
+            cat('note: unable to load parallel package\n', file=stderr())
             1
           }
           dompiWorkerLoop(cl, cores=cores, verbose=verbose)

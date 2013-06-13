@@ -1,6 +1,18 @@
 NEWS/ChangeLog for doMPI
 ------------------------
 
+0.2	2013-4-XX
+    o	require R 2.14.0 or newer
+    o	added setRngDoMPI function
+    o	add backend-specific "seed" option for reproducible results
+    o	added compiler support and "nocompile" option to disable it
+    o	added two new examples to demonstrate "cluster exporting"
+    o	switched from multicore to parallel package
+    o	improved variable exporting support
+    o	fixed error handling when calling combine function
+    o	removed nws support
+    o	fixed bugs in pi2.R and initEnvir.R examples
+
 0.1-5	2010-8-9
     o	fixed "R CMD check" warning reported by Kurt Hornik
 

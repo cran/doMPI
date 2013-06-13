@@ -22,7 +22,7 @@ n <- 1000000  # length of vectors
 t <- 60       # seconds to compute
 
 # Create a "timeout" iterator that returns "n" for "t" seconds
-timer <- timeout(irep(n), time=t)
+timer <- timeout(irepeat(n), time=t)
 
 # Define a ".final" function that calculates pi from estimates of pi/4
 calc.pi <- function(x) {

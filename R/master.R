@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Stephen B. Weston
+# Copyright (c) 2009--2013, Stephen B. Weston
 #
 # This is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -48,13 +48,13 @@
 master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
                    initEnvir, initArgs, initEnvirMaster, initArgsMaster,
                    finalEnvir, finalArgs, profile, bcastThreshold,
-                   forcePiggyback) {
+                   forcePiggyback, chunkseed) {
   # start profiling the foreach execution
   # XXX should require profiling to be enabled
   prof <- startnode('master')
 
   # choose a random id for this job for sanity checking
-  jid <- sample(1000000, 1)
+  jid <- sample(1000000, 1)  # XXX should this be using the RNG?
 
   # set the enclosing environment of initEnvir and finalEnvir to
   # be the execution environment
@@ -91,7 +91,12 @@ master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
     if (numtasks > 0) {
       sendToWorker(cl, workerid, 
                    list(argslist=argslist, numtasks=numtasks, tid=tid, jid=jid,
-                        jobcomplete=FALSE, job=job, joblen=joblen))
+                        jobcomplete=FALSE, job=job, joblen=joblen,
+                        chunkseed=chunkseed))
+      # Update chunkseed if non-null
+      if (! is.null(chunkseed)) {
+        chunkseed <<- nextRNGSubStream(chunkseed)
+      }
     }
     finishnode(sprof)
     numtasks
@@ -114,7 +119,13 @@ master <- function(cl, expr, it, envir, packages, verbose, chunkSize, info,
     tid <- resultchunk$tid
 
     for (i in seq(length=resultchunk$numtasks)) {
-      accumulate(it, resultchunk$resultslist[[i]], tid)
+      tryCatch({
+        accumulate(it, resultchunk$resultslist[[i]], tid)
+      },
+      error=function(e) {
+        cat(sprintf('error thrown by combine function: %s\n',
+                    conditionMessage(e)))
+      })
       tid <- tid + 1
     }
     finishnode(sprof)

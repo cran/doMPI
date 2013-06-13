@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Stephen B. Weston
+# Copyright (c) 2009--2013, Stephen B. Weston
 #
 # This is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -20,6 +20,7 @@ local({
   # load all packages that we need explicitly to avoid messages to stdout
   suppressMessages(library(methods))  # because we're using Rscript
   suppressMessages(library(doMPI))
+  library(parallel)
 
   # set default option values
   tempdir <- Sys.getenv('TMPDIR', '/tmp')
@@ -81,12 +82,6 @@ local({
     logdir <- workdir
   }
 
-  # if maxcores is greater than 1, then attempt to load multicore
-  usemc <- if (maxcores > 1)
-    suppressWarnings(require(multicore, quietly=TRUE))
-  else
-    FALSE
-
   # initialize MPI
   mpi.comm.get.parent(intercomm)
   mpi.intercomm.merge(intercomm, 1, comm)
@@ -117,7 +112,8 @@ local({
 
   # open a worker log file
   outfile <- if (verbose) {
-    outname <- sprintf('MPI_%d_%s.log', workerid, Sys.info()[['user']])
+    outname <- sprintf('MPI_%d_%s_%d.log', workerid,
+                       Sys.info()[['user']], Sys.getpid())
     file.path(logdir, outname)
   } else {
     '/dev/null'
@@ -155,17 +151,10 @@ local({
   numprocs <- length(idx)
   id <- which(sort(wids[idx]) == workerid) - 1
 
-  # possibly adjust the number of cores if we're on the master node
-  if (usemc) {
-    numcores <- multicore:::detectCores()
-    if (numcores > maxcores) {
-      if (verbose) {
-        cat(sprintf('reducing numcores from %d to %d as per maxcores\n',
-                    numcores, maxcores))
-      }
-      numcores <- maxcores
-    }
-
+  # determine the number of cores on this node to use
+  numcores <- min(detectCores(), maxcores)
+  if (numcores > 1) {
+    # adjust the number of cores if we're on the master node
     if (includemaster && nodename == masternode)
       numcores <- numcores - 1
 
@@ -177,16 +166,16 @@ local({
                   numprocs, id, numcores, cores))
     }
   } else {
-    # we're not using multicore, so set cores to 1
     cores <- 1
     if (verbose) {
-      cat('multicore package is not being used\n')
+      cat('parallel package is not being used\n')
     }
   }
 
   # this is where all the work is done
   cl <- openMPIcluster(bcast=bcast, comm=comm, workerid=workerid,
                        verbose=verbose, mtag=mtag, wtag=wtag)
+  # note that it is safe for "cores" to be less than 1
   dompiWorkerLoop(cl, cores, verbose)
 
   # shutdown MPI

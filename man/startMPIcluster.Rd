@@ -12,7 +12,7 @@ startMPIcluster(count, verbose=FALSE, workdir=getwd(), logdir=workdir,
 }
 \arguments{
   \item{count}{Number of workers to spawn.  If you start your
-  script using mpirun/orterun, then you don't really need to use
+  script using mpirun, then you don't really need to use
   the \code{count} argument, because \code{startMPIcluster} will
   try to do something reasonable.  To be more specific, if
   \code{comm} is \code{0}, then it will set \code{count} to
@@ -23,7 +23,7 @@ startMPIcluster(count, verbose=FALSE, workdir=getwd(), logdir=workdir,
   \code{count} is set to one less.  If that value is equal to one, then
   \code{count} is arbitrarily set to \code{2}.
   Note that if you've started the script without
-  mpirun/orterun, than \code{mpi.universe.size()} will always return
+  mpirun, than \code{mpi.universe.size()} will always return
   \code{1}, so \code{count} will default to \code{2}.}
   \item{verbose}{Indicates if verbose messages should be enabled.
   Defaults to \code{FALSE}.}

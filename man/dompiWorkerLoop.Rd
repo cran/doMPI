@@ -11,8 +11,7 @@ to be used from a \code{doMPI} script that is executed in
 dompiWorkerLoop(cl, cores=1, verbose=FALSE)
 }
 \arguments{
-  \item{cl}{a \code{dompicluster} object created with \code{startMPIcluster}
-  or \code{startNWScluster}.}
+  \item{cl}{a \code{dompicluster} object created with \code{startMPIcluster}.}
   \item{cores}{Maximum number of cores for workers to use.
   Defaults to \code{1}.}
   \item{verbose}{Indicates if verbose messages should be enabled.

@@ -7,6 +7,7 @@
 # inspiring the "times" function, as well as the foreach package itself.
 
 library(foreach)
+library(iterators)
 
 # Define a simple function for resampling a data frame
 resample <- function(d, n=nrow(d)) d[sample(nrow(d), n, replace=TRUE),]

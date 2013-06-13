@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Stephen B. Weston
+# Copyright (c) 2009--2013, Stephen B. Weston
 #
 # This is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -37,6 +37,25 @@ makeDotsEnv <- function(...) {
   function() NULL
 }
 
+convseed <- function(iseed) {
+  saveseed <- if (exists('.Random.seed', where=.GlobalEnv, inherits=FALSE))
+    get('.Random.seed', pos=.GlobalEnv, inherits=FALSE)
+
+  saverng <- RNGkind("L'Ecuyer-CMRG")
+
+  tryCatch({
+    set.seed(iseed)
+    get('.Random.seed', pos=.GlobalEnv, inherits=FALSE)
+  },
+  finally={
+    RNGkind(saverng[1], saverng[2])
+    if (is.null(saveseed))
+      rm('.Random.seed', pos=.GlobalEnv)
+    else
+      assign('.Random.seed', saveseed, pos=.GlobalEnv)
+  })
+}
+
 doMPI <- function(obj, expr, envir, data) {
   cl <- data
 
@@ -52,6 +71,8 @@ doMPI <- function(obj, expr, envir, data) {
   profile <- FALSE
   bcastThreshold <- 800  # XXX not sure of a good default value
   forcePiggyback <- FALSE
+  nocompile <- FALSE
+  seed <- NULL
 
   if (!inherits(obj, 'foreach'))
     stop('obj must be a foreach object')
@@ -66,7 +87,8 @@ doMPI <- function(obj, expr, envir, data) {
                         'initEnvir', 'initArgs',
                         'initEnvirMaster', 'initArgsMaster',
                         'finalEnvir', 'finalArgs',
-                        'profile', 'bcastThreshold', 'forcePiggyback')
+                        'profile', 'bcastThreshold', 'forcePiggyback',
+                        'nocompile', 'seed')
     if (any(!recog))
       warning(sprintf('ignoring unrecognized mpi option(s): %s',
                       paste(nms[!recog], collapse=', ')), call.=FALSE)
@@ -196,6 +218,26 @@ doMPI <- function(obj, expr, envir, data) {
         forcePiggyback <- options$forcePiggyback
       }
     }
+
+    if (!is.null(options$nocompile)) {
+      if (!is.logical(options$nocompile) || length(options$nocompile) != 1) {
+        warning('nocompile must be a logical value', call.=FALSE)
+      } else {
+        if (obj$verbose)
+          cat(sprintf('setting nocompile option to %s\n', options$nocompile))
+        nocompile <- options$nocompile
+      }
+    }
+
+    if (!is.null(options$seed)) {
+      if (!is.numeric(options$seed) || length(options$seed) != 1) {
+        warning('seed must be a numeric value', call.=FALSE)
+      } else {
+        if (obj$verbose)
+          cat(sprintf('setting seed option to %s\n', options$seed))
+        seed <- convseed(options$seed)
+      }
+    }
   }
 
   # setup the parent environment by first attempting to create an environment
@@ -239,8 +281,13 @@ doMPI <- function(obj, expr, envir, data) {
     for (sym in export) {
       if (!exists(sym, envir, inherits=TRUE))
         stop(sprintf('unable to find variable "%s"', sym))
-      assign(sym, get(sym, envir, inherits=TRUE),
-             pos=exportenv, inherits=FALSE)
+      val <- get(sym, envir, inherits=TRUE)
+      if (is.function(val) &&
+          (identical(environment(val), .GlobalEnv) ||
+           identical(environment(val), envir))) {
+        environment(val) <- exportenv
+      }
+      assign(sym, val, pos=exportenv, inherits=FALSE)
     }
   }
 
@@ -249,10 +296,17 @@ doMPI <- function(obj, expr, envir, data) {
     # exported, such as the size of the objects
   }
 
+  # compile the expression unless nocompile is true
+  xpr <- if (nocompile)
+    expr
+  else
+    compile(expr, env=envir, options=list(suppressUndefined=TRUE))
+
   # execute the tasks
-  master(cl, expr, it, exportenv, obj$packages, obj$verbose, chunkSize, info,
+  master(cl, xpr, it, exportenv, obj$packages, obj$verbose, chunkSize, info,
          initEnvir, initArgs, initEnvirMaster, initArgsMaster,
-         finalEnvir, finalArgs, profile, bcastThreshold, forcePiggyback)
+         finalEnvir, finalArgs, profile, bcastThreshold, forcePiggyback,
+         seed)
 
   # check for errors
   errorValue <- getErrorValue(it)

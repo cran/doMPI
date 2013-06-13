@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Stephen B. Weston
+# Copyright (c) 2009--2013, Stephen B. Weston
 #
 # This is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -50,6 +50,7 @@ dompiWorkerLoop <- function(cl, cores=1, verbose=FALSE) {
   jid <- -999
   err <- NULL
   envir <- NULL
+  wenvir <- new.env(parent=globalenv())
 
   # loop over jobs, which correspond to calls to foreach
   repeat {
@@ -67,6 +68,21 @@ dompiWorkerLoop <- function(cl, cores=1, verbose=FALSE) {
       break
     }
 
+    # check if this is a PRNG job issued by setRngDoMPI
+    if (!is.null(taskchunk$seed)) {
+      logger('got a PRNG job')
+      if (injob) {
+        logger('cleaning up after job %d before initializing PRNG', jid)
+        jobCleanup(envir)
+        envir <- NULL
+        injob <- FALSE
+      }
+
+      RNGkind("L'Ecuyer-CMRG")
+      assign('.Random.seed', taskchunk$seed, pos=globalenv())
+      next
+    }
+
     # check if this is the start of a new job
     if (taskchunk$joblen > 0 || !is.null(taskchunk$job)) {
       if (injob) {
@@ -75,7 +91,6 @@ dompiWorkerLoop <- function(cl, cores=1, verbose=FALSE) {
         jobCleanup(envir)
         envir <- NULL
       }
-      injob <- TRUE  # if we weren't in a job before, we are now
 
       # receive the job environment from the master if necessary
       envir <- if (taskchunk$joblen > 0) {
@@ -87,12 +102,34 @@ dompiWorkerLoop <- function(cl, cores=1, verbose=FALSE) {
         taskchunk$job
       }
 
-      # get the job id from envir to sanity check tasks
-      jid <- get('.$jid', envir)
+      if (!is.null(taskchunk$globaljob) && taskchunk$globaljob) {
+        logger('setting values in the worker environment')
+        injob <- FALSE
+        for (nm in ls(envir, all.names=TRUE)) {
+          obj <- get(nm, pos=envir, inherits=FALSE)
+          if (is.function(obj) && identical(environment(obj), .GlobalEnv)) {
+            environment(obj) <- wenvir
+          }
+          assign(nm, obj, pos=wenvir)
+        }
+      } else {
+        injob <- TRUE  # if we weren't in a job before, we are now
 
-      # perform initialization for new job
-      logger('initializing for new job %d', jid)
-      err <- jobInitialize(envir)
+        parent.env(envir) <- wenvir
+
+        # get the job id from envir to sanity check tasks
+        jid <- get('.$jid', envir)
+
+        # perform initialization for new job
+        logger('initializing for new job %d', jid)
+        err <- jobInitialize(envir)
+
+        # set RNG to "L'Ecuyer-CMRG" if "chunkseed" is set
+        if (! is.null(taskchunk$chunkseed)) {
+          logger("setting RNG to L'Ecuyer-CMRG for this job")
+          RNGkind("L'Ecuyer-CMRG")
+        }
+      }
     }
 
     # check if there are tasks to execute
@@ -101,6 +138,12 @@ dompiWorkerLoop <- function(cl, cores=1, verbose=FALSE) {
       # assert envir is not NULL
       # sanity check the taskchunk now that any new job has been setup
       checkTask(taskchunk, jid)
+
+      if (! is.null(taskchunk$chunkseed)) {
+        logger('setting .Random.seed for a taskchunk: %s',
+               paste(taskchunk$chunkseed, collapse=', '))
+        assign('.Random.seed', taskchunk$chunkseed, pos=globalenv())
+      }
 
       resultchunk <- NULL
       tryCatch({
@@ -169,9 +212,6 @@ jobInitialize <- function(envir) {
     for (pkg in pkgs) {
       require(pkg, quietly=TRUE, character.only=TRUE)
     }
-
-    # fix the parent environment of the execution environment
-    parent.env(envir) <- globalenv()
 
     # execute the "initEnvir" function if specified
     ienv <- get('.$initEnvir', pos=envir)

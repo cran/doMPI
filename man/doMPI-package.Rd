@@ -30,6 +30,8 @@ There are several backend-specific options that can be specified when using
 \code{profile} \tab Display profiling information from the master's point of view\cr
 \code{bcastThreshold} \tab Used to decide whether to piggy-back or broadcast job data\cr
 \code{forcePiggyback} \tab Always piggy-back job environment with first task to each worker\cr
+\code{nocompile} \tab Don't compile the R expression\cr
+\code{seed} \tab Starting seed for tasks\cr
 }
 
 The \code{chunkSize} option is particularly important, since it can be
@@ -82,6 +84,25 @@ value is \code{FALSE}, the data may still be piggy-backed, but it is not
 guaranteed.  In general, the job data is only piggy-backed if it is
 relatively small.  The default value is \code{FALSE}.
 
+The \code{nocompile} option is used to disable compilation of the
+R expression in the body of the foreach loop.  The default value is
+\code{FALSE}.
+
+The \code{seed} option is used for achieving reproducible results.  If
+set to a single numeric value, such as \code{27}, it is converted to a
+value that can be passed to the \code{nextRNGSubStream} function from
+the \pkg{parallel} package.  This value is assigned to the global
+\code{.Random.seed} variable on some cluster worker when it executes the
+first task (or task chunk).  The \code{nextRNGSubStream} function is
+used to generate subsequent values that are assigned to
+\code{.Random.seed} when executing subsequent tasks.  Thus, RNG
+substreams are associated with tasks, rather than workers.
+This is necessary for reproducible results, since the \pkg{doMPI}
+package uses load balancing techniques that can result in different
+tasks being executed by different workers on different runs of the same
+\code{foreach} loop.  The default value of the \code{seed} option is
+\code{NULL}.
+
 Additional documentation is available on the following functions:
 
 \tabular{ll}{
@@ -89,6 +110,7 @@ Additional documentation is available on the following functions:
 \code{registerDoMPI} \tab Register a cluster object to be used with \%dopar\%\cr
 \code{closeCluster} \tab Shutdown and close a cluster object\cr
 \code{clusterSize} \tab Return the number of workers associated with a cluster object\cr
+\code{setRngDoMPI} \tab Initialize parallel random number generation on a cluster\cr
 }
 
 For a complete list of functions with individual help pages,

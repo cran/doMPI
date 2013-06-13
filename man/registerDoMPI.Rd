@@ -5,8 +5,7 @@
 The \code{registerDoMPI} function is used to register \code{doMPI}
 with the foreach package.  Specifically, you register a particular
 cluster object which will be used when executing the \%dopar\% operator.
-The cluster object is created using \code{startMPIcluster} or
-\code{startNWScluster}.
+The cluster object is created using \code{startMPIcluster}.
 }
 \usage{
 registerDoMPI(cl)

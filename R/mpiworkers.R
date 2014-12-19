@@ -121,13 +121,7 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
         } else {
           cl <- openMPIcluster(bcast=bcast, comm=comm, workerid=rank,
                                mtag=mtag, wtag=wtag)
-          cores <- if (suppressWarnings(require(parallel, quietly=TRUE))) {
-            maxcores
-          } else {
-            cat('note: unable to load parallel package\n', file=stderr())
-            1
-          }
-          dompiWorkerLoop(cl, cores=cores, verbose=verbose)
+          dompiWorkerLoop(cl, cores=maxcores, verbose=verbose)
         }
       },
       finally={

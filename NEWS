@@ -1,10 +1,13 @@
 NEWS/ChangeLog for doMPI
 ------------------------
 
-0.2	2013-4-XX
+0.2.1	2014-11-25
+    o	fixed "R CMD check" warnings reported by Kurt Hornik
+
+0.2	2013-6-13
     o	require R 2.14.0 or newer
     o	added setRngDoMPI function
-    o	add backend-specific "seed" option for reproducible results
+    o	added backend-specific "seed" option for reproducible results
     o	added compiler support and "nocompile" option to disable it
     o	added two new examples to demonstrate "cluster exporting"
     o	switched from multicore to parallel package

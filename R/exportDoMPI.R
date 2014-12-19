@@ -1,6 +1,3 @@
-# XXX
-# This should keep a record of objects that have been exported
-# to the workers so those objects won't be auto-exported later.
 exportDoMPI <- function(cl, varlist, envir=.GlobalEnv) {
   genvir <- new.env(parent=emptyenv())
 

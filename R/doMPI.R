@@ -16,8 +16,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
 # USA
 
+.dompiGlobals <- new.env(parent=emptyenv())
+
 registerDoMPI <- function(cl) {
   setDoPar(doMPI, cl, info)
+  assign('cluster', cl, pos=.dompiGlobals, inherits=FALSE)
 }
 
 info <- function(data, item) {
@@ -29,7 +32,7 @@ info <- function(data, item) {
 }
 
 getDoMpiCluster <- function() {
-  foreach:::.foreachGlobals$data
+  .dompiGlobals$cluster
 }
 
 makeDotsEnv <- function(...) {

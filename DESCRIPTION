@@ -1,9 +1,9 @@
 Package: doMPI
 Type: Package
-Title: Foreach parallel adaptor for the Rmpi package
-Version: 0.2.1
-Author: Steve Weston
-Maintainer: Steve Weston <stephen.b.weston@gmail.com>
+Title: Foreach Parallel Adaptor for the Rmpi Package
+Version: 0.2.2
+Authors@R: person("Steve", "Weston", role=c("cre", "aut", "cph"),
+                  email="stephen.b.weston@gmail.com")
 Description: Provides a parallel backend for the %dopar% function using
         the Rmpi package.
 Depends: R (>= 2.14.0), foreach(>= 1.3.0), iterators(>= 1.0.0), Rmpi(>=
@@ -11,7 +11,9 @@ Depends: R (>= 2.14.0), foreach(>= 1.3.0), iterators(>= 1.0.0), Rmpi(>=
 Imports: parallel, compiler, utils
 Suggests: randomForest, itertools
 License: GPL-2
-Packaged: 2014-12-19 21:07:28 UTC; sw464
 NeedsCompilation: no
+Packaged: 2017-05-01 21:51:44 UTC; sw464
+Author: Steve Weston [cre, aut, cph]
+Maintainer: Steve Weston <stephen.b.weston@gmail.com>
 Repository: CRAN
-Date/Publication: 2014-12-20 07:42:44
+Date/Publication: 2017-05-01 22:13:18 UTC

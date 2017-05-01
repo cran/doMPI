@@ -8,7 +8,8 @@ The \code{startMPIcluster} function is used to start an MPI cluster.
 startMPIcluster(count, verbose=FALSE, workdir=getwd(), logdir=workdir,
                 maxcores=1, includemaster=TRUE, bcast=TRUE,
                 comm=if (mpi.comm.size(0) > 1) 0 else 3,
-                intercomm=comm + 1, mtag=10, wtag=11)
+                intercomm=comm + 1, mtag=10, wtag=11,
+                defaultopts=list())
 }
 \arguments{
   \item{count}{Number of workers to spawn.  If you start your
@@ -58,6 +59,11 @@ startMPIcluster(count, verbose=FALSE, workdir=getwd(), logdir=workdir,
   Do not use this option unless you know what you're doing, or
   your program will very likely hang.
   Defaults to \code{11}.}
+  \item{defaultopts}{A list containing default values to use for some
+  of the \code{.options.mpi} options.
+  These options include: \code{chunkSize}, \code{info},
+  \code{profile}, \code{bcastThreshold}, \code{forcePiggyback},
+  \code{nocompile}, and \code{seed}.}
 }
 \note{
 The \code{startMPIcluster} function will return an MPI cluster object of

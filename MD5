@@ -1,15 +1,15 @@
-b63cb596375582931735fcce8d12704e *DESCRIPTION
+3f026b2fdc50fdedf2751c7b9a604f37 *DESCRIPTION
 e51cf67637bbb254b5ed6e2ab73566fa *NAMESPACE
-b0b876e7670b2cdd330fb3363ae655fb *NEWS
-a79f53b3faa866faf0b673bf811eef72 *R/doMPI.R
+05967f4ebc5ac7ec7b4cc3aacad43f40 *NEWS
+e489baf554fbb9a7df3746a16831b417 *R/doMPI.R
 62db9c4a745b10e1791c6a8cee169588 *R/dompiWorkerLoop.R
 bddd0b94adcb622f4ffc60a36857f051 *R/exportDoMPI.R
 492360cfc430cad813180aa1127bf777 *R/master.R
-c015bd929137ee28b4919d95541196a5 *R/mpiworkers.R
+c7f119771035dbe78b81bfdf10f1836b *R/mpiworkers.R
 b5cebd5b5b1ed37a97ae3e84e61bf6e1 *R/profile.R
 4148478057fbcbf6867fd106cd3ff355 *R/rng.R
 7d4cff382537ccb5075abe3b104f435f *R/workers.R
-14d293ff194e666a77deed266923286b *build/vignette.rds
+df44bcd552827ebb130d975c95b8c371 *build/vignette.rds
 5df634d7e489f9f13bcc06a28b4e501d *demo/00Index
 fbf9bf2b725292e3aad3c71276133b35 *demo/sincMPI.R
 261c18d4721b863bf684275afdc66f8d *inst/RMPIworker.R
@@ -18,7 +18,7 @@ df1f83763ba7a869bfdaf2c5c4ae677a *inst/benchmarks/matmul.R
 fd3f975ecfd04cf9f9ad835219287d64 *inst/benchmarks/rforest.R
 180f1826630275d4c3299812a1f6ea11 *inst/doc/doMPI.R
 3f608507f6b09d5ff9f4a2d64665e0f8 *inst/doc/doMPI.Rnw
-bbda1e7a1320a1b55bd50e7a1f3ba4ac *inst/doc/doMPI.pdf
+b21a14295dd18ec31b77c86219f3c6fd *inst/doc/doMPI.pdf
 1914e3a6e95c70b719cb3b3165466cf2 *inst/examples/arima.R
 222cb73fdd142d39f5d9189e943d4209 *inst/examples/bootMPI.R
 9b0606189ec28a5149302b29282f885c *inst/examples/clusterexport.R
@@ -46,5 +46,5 @@ ab3987d17e49f294232c2d424101a716 *man/exportDoMPI.Rd
 65d8faeec9fa0c61883160877b6283df *man/registerDoMPI.Rd
 078338ba77c8ddcedb89f2ce626341a8 *man/setRngDoMPI.Rd
 fc8d599bd87c0f8acbc815ee8c076bbb *man/sinkWorkerOutput.Rd
-671dbe166df287f3ec09c19485796f92 *man/startMPIcluster.Rd
+fcc215d05c8d77bcb769fe10e8ffef31 *man/startMPIcluster.Rd
 3f608507f6b09d5ff9f4a2d64665e0f8 *vignettes/doMPI.Rnw

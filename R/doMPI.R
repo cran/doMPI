@@ -63,19 +63,23 @@ doMPI <- function(obj, expr, envir, data) {
   cl <- data
 
   # set the default mpi options
-  chunkSize <- 1
-  info <- obj$verbose
+  getval <- function(nm, defval) {
+    val <- cl$defaultopts[[nm]]
+    if (is.null(val)) defval else val
+  }
+  chunkSize <- getval('chunkSize', 1)
+  info <- getval('info', obj$verbose)
   initEnvir <- NULL
   initArgs <- NULL
   initEnvirMaster <- NULL
   initArgsMaster <- NULL
   finalEnvir <- NULL
   finalArgs <- NULL
-  profile <- FALSE
-  bcastThreshold <- 800  # XXX not sure of a good default value
-  forcePiggyback <- FALSE
-  nocompile <- FALSE
-  seed <- NULL
+  profile <- getval('profile', FALSE)
+  bcastThreshold <- getval('bcastThreshold', 800)
+  forcePiggyback <- getval('forcePiggyback', FALSE)
+  nocompile <- getval('nocompile', FALSE)
+  seed <- getval('seed', NULL)
 
   if (!inherits(obj, 'foreach'))
     stop('obj must be a foreach object')

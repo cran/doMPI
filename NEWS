@@ -1,6 +1,9 @@
 NEWS/ChangeLog for doMPI
 ------------------------
 
+0.2.2	2017-5-1
+    o	added startMPIcluster "defaultopts" option
+
 0.2.1	2014-11-25
     o	fixed "R CMD check" warnings reported by Kurt Hornik
 

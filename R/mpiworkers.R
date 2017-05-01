@@ -36,9 +36,14 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
                             logdir=workdir, maxcores=1,
                             includemaster=TRUE, bcast=TRUE,
                             comm=if(mpi.comm.size(0) > 1) 0 else 3,
-                            intercomm=comm+1, mtag=10, wtag=11) {
+                            intercomm=comm+1, mtag=10, wtag=11,
+                            defaultopts=list()) {
   size <- mpi.comm.size(comm)
   rank <- mpi.comm.rank(comm)
+
+  if (!is.list(defaultopts)) {
+    stop('defaultopts must be a list')
+  }
 
   # See if we've already created a cluster for the specified communicator
   cl <- getMPIcluster(comm)
@@ -66,7 +71,7 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
 
       # Create and return the cluster object
       cl <- list(comm=comm, workerCount=count, workerid=rank, verbose=verbose,
-                 mtag=mtag, wtag=wtag)
+                 mtag=mtag, wtag=wtag, defaultopts=defaultopts)
       class(cl) <- if (bcast) {
         c("mpicluster", "dompicluster")
       } else {
@@ -181,7 +186,7 @@ startMPIcluster <- function(count, verbose=FALSE, workdir=getwd(),
     nodelist <- mpi.allgather.Robj(nodelist, comm)
 
     cl <- list(comm=comm, workerCount=count, workerid=0, verbose=verbose,
-               mtag=mtag, wtag=wtag)
+               mtag=mtag, wtag=wtag, defaultopts=defaultopts)
     class(cl) <- if (bcast) {
       c("mpicluster", "dompicluster")
     } else {
